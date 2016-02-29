@@ -1,10 +1,13 @@
 'use strict';
+
 function Watchify(options) {
   let request = require('request');
 
   let self = this;
   self.token = options.token;
   self.userAgent = options.userAgent;
+  self.targetUser = options.targetUser;
+  self.targetRepo = options.targetRepo;
 
   return {
     watch: watch
@@ -24,7 +27,7 @@ function Watchify(options) {
   function _registerMostRecent(repo) {
     return new Promise(function(resolve, reject) {
       request.get({
-        url:'https://api.github.com/repos/Fyrd/caniuse/commits?per_page=1', 
+        url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/commits?per_page=1', 
         headers: {
           'User-Agent': self.userAgent,
           'Authorization': 'token ' + self.token
@@ -46,7 +49,7 @@ function Watchify(options) {
     console.log(self.currentCommit);
 
     request.get({
-        url:'https://api.github.com/repos/Fyrd/caniuse/commits?per_page=1', 
+        url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/commits?per_page=1', 
         headers: {
           'User-Agent': self.userAgent,
           'Authorization': 'token ' + self.token
@@ -74,7 +77,7 @@ function Watchify(options) {
 
   function _compareCommits(base, head, onChanges) {
     request.get({
-      url:'https://api.github.com/repos/Fyrd/caniuse/compare/'+base+'...'+head, 
+      url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/compare/'+base+'...'+head, 
       // url: 'https://api.github.com/repos/Fyrd/caniuse/compare/734fe7198f6e294e293c27669eaf8cdec835b219...be9c49dc039c8db44efff3f12a6bf724540f20b1',
       headers: {
         'User-Agent': self.userAgent,
@@ -87,6 +90,7 @@ function Watchify(options) {
       }
       let data = JSON.parse(body);
       let listOfChangedFiles = data.files;
+      self.currentCommit = head;
       onChanges(listOfChangedFiles);
     })
   }
