@@ -15,4 +15,4 @@ let watcher = new Watchify({
     token: process.env.GITHUB_TOKEN
 })
 
-watcher.watch('this string represents the repo', 4000);
+watcher.watch('this string represents the repo', 2000);

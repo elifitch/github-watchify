@@ -12,25 +12,33 @@ function Watchify(options) {
 
   function watch(repo, interval, callback) {
     //parse repo
-    _registerMostRecent(repo);
-    setInterval(function() {
-      _pollRepo(repo);
-    }, interval);
+    _registerMostRecent(repo).then(function(mostRecentCommit) {
+      self.mostRecentCommit = commit;
+
+      setInterval(function() {
+        _pollRepo(repo);
+      }, interval);
+    });
   }
 
   function _registerMostRecent(repo) {
-    request.get({
-      url:'https://api.github.com/repos/Fyrd/caniuse/commits?per_page=1', 
-      headers: {
-        'User-Agent': self.userAgent,
-        'Authorization': 'token ' + self.token
-      }
-    }, function(err, response, body) {
-      if(err) { console.log(err); return; }
-      let data = JSON.parse(body);
+    return new Promise(function(resolve, reject) {
+      request.get({
+        url:'https://api.github.com/repos/Fyrd/caniuse/commits?per_page=1', 
+        headers: {
+          'User-Agent': self.userAgent,
+          'Authorization': 'token ' + self.token
+        }
+      }, function(err, response, body) {
+        if(err) {
+          console.log(err);
+          reject(err);
+        }
+        let data = JSON.parse(body);
 
-      self.mostRecentCommit = data[0].sha;
-    });
+        resolve(data[0].sha);
+      });
+    })
   }
 
   function _pollRepo(repo) {
@@ -41,25 +49,3 @@ function Watchify(options) {
 };
 
 module.exports = Watchify;
-
-
-
-
-
-
-
-
-
-// request.get({
-//   url:'https://api.github.com/repos/Fyrd/caniuse/commits?per_page=1', 
-//   headers: {
-//     'User-Agent': self.userAgent,
-//     'Authorization': 'token ' + self.token
-//   }
-// }, function(err, response, body) {
-//   if(err) { console.log(err); return; }
-//   console.log('Get response: ' + response.statusCode);
-//   console.log(body);
-//   console.log('--------------------------------');
-//   console.log(response.headers);
-// });
