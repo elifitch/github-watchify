@@ -18,11 +18,9 @@ let watcher = new Watchify({
 // targetRepo: 'wonderful-world-of-webgl'
 watcher.watch({
   targetUser: 'elifitch',
-  targetRepo: 'wonderful-world-of-webgl',
+  targetRepo: 'test-repo',
   interval: 10000,
-  onCommit: function(arg1, arg2, arg3) {
-    console.log(arg1);
-    console.log(arg2);
-    console.log(arg3);
+  onCommit: function(listOfChangedFiles) {
+    console.log(listOfChangedFiles);
   }
 });

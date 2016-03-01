@@ -12,16 +12,15 @@ function Watchify(options) {
   }
 
   function watch(params) {
-    let currentCommit;
     const repo = params.targetUser + '/' + params.targetRepo;
     const interval = params.interval;
     const onCommit = params.onCommit;
     //parse repo
     _registerMostRecent(repo).then(function(mostRecentCommit) {
-      currentCommit = mostRecentCommit;
+      self.currentCommit = mostRecentCommit;
 
       setInterval(function() {
-        _pollRepo(repo, currentCommit, onCommit);
+        _pollRepo(repo, self.currentCommit, onCommit);
       }, interval);
     });
   }
