@@ -6,20 +6,22 @@ function Watchify(options) {
   let self = this;
   self.token = options.token;
   self.userAgent = options.userAgent;
-  self.targetUser = options.targetUser;
-  self.targetRepo = options.targetRepo;
 
   return {
     watch: watch
   }
 
-  function watch(repo, interval, onChanges) {
+  function watch(params) {
+    let currentCommit;
+    const repo = params.targetUser + '/' + params.targetRepo;
+    const interval = params.interval;
+    const onCommit = params.onCommit;
     //parse repo
-    _registerMostRecent(repo).then(function(currentCommit) {
-      self.currentCommit = currentCommit;
+    _registerMostRecent(repo).then(function(mostRecentCommit) {
+      currentCommit = mostRecentCommit;
 
       setInterval(function() {
-        _pollRepo(repo, currentCommit, onChanges);
+        _pollRepo(repo, currentCommit, onCommit);
       }, interval);
     });
   }
@@ -27,7 +29,7 @@ function Watchify(options) {
   function _registerMostRecent(repo) {
     return new Promise(function(resolve, reject) {
       request.get({
-        url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/commits?per_page=1', 
+        url:'https://api.github.com/repos/' + repo + '/commits?per_page=1', 
         headers: {
           'User-Agent': self.userAgent,
           'Authorization': 'token ' + self.token
@@ -38,18 +40,17 @@ function Watchify(options) {
           reject(err);
         }
         let data = JSON.parse(body);
-
+        console.log(data[0].sha);
         resolve(data[0].sha);
       });
     })
   }
 
-  function _pollRepo(repo, currentCommit, onChanges) {
+  function _pollRepo(repo, currentCommit, onCommit) {
     console.log('polling');
-    console.log(self.currentCommit);
 
     request.get({
-        url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/commits?per_page=1', 
+        url:'https://api.github.com/repos/' + repo + '/commits?per_page=1', 
         headers: {
           'User-Agent': self.userAgent,
           'Authorization': 'token ' + self.token
@@ -61,7 +62,7 @@ function Watchify(options) {
         }
         let data = JSON.parse(body);
         let changedFiles;
-        // onChanges('foo', 'bar', 'baz');
+        // onCommit('foo', 'bar', 'baz');
         if (data[0].sha === currentCommit) {
           //nothing has changed
           console.log('nothing changed');
@@ -70,14 +71,14 @@ function Watchify(options) {
           //there's a new commit!  Do something!
           //https://api.github.com/repos/Fyrd/caniuse/compare/734fe7198f6e294e293c27669eaf8cdec835b219...be9c49dc039c8db44efff3f12a6bf724540f20b1
           //https://api.github.com/repos/Fyrd/caniuse/compare/currentCommit...data[0].sha
-          _compareCommits(currentCommit, data[0].sha, onChanges);
+          _compareCommits(repo, currentCommit, data[0].sha, onCommit);
         }
       });
   }
 
-  function _compareCommits(base, head, onChanges) {
+  function _compareCommits(repo, base, head, onCommit) {
     request.get({
-      url:'https://api.github.com/repos/'+ self.targetUser +'/'+ self.targetRepo +'/compare/'+base+'...'+head, 
+      url:'https://api.github.com/repos/' + repo + '/compare/'+base+'...'+head, 
       // url: 'https://api.github.com/repos/Fyrd/caniuse/compare/734fe7198f6e294e293c27669eaf8cdec835b219...be9c49dc039c8db44efff3f12a6bf724540f20b1',
       headers: {
         'User-Agent': self.userAgent,
@@ -91,7 +92,8 @@ function Watchify(options) {
       let data = JSON.parse(body);
       let listOfChangedFiles = data.files;
       self.currentCommit = head;
-      onChanges(listOfChangedFiles);
+
+      onCommit(listOfChangedFiles);
     })
   }
 
