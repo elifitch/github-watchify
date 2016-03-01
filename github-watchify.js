@@ -12,23 +12,29 @@ function Watchify(options) {
   }
 
   function watch(params) {
+    let currentCommit = '';
     const repo = params.targetUser + '/' + params.targetRepo;
     const interval = params.interval;
     const onCommit = params.onCommit;
-    //parse repo
-    _registerMostRecent(repo).then(function(mostRecentCommit) {
-      self.currentCommit = mostRecentCommit;
-
-      setInterval(function() {
-        _pollRepo(repo, self.currentCommit, onCommit);
-      }, interval);
+    
+    //ping first, then set the interval
+    _pingRepo(repo, currentCommit, onCommit).then(function(mostRecentCommit) {
+      currentCommit = mostRecentCommit;
     });
+    setInterval(function() {
+      _pingRepo(repo, currentCommit, onCommit).then(function(mostRecentCommit) {
+        if(currentCommit !== mostRecentCommit) {
+          _compareCommits(repo, currentCommit, mostRecentCommit, onCommit);
+          currentCommit = mostRecentCommit;
+        }
+      });
+    }, interval);
   }
 
-  function _registerMostRecent(repo) {
+  function _pingRepo(repo, currentCommit, onCommit) {
     return new Promise(function(resolve, reject) {
       request.get({
-        url:'https://api.github.com/repos/' + repo + '/commits?per_page=1', 
+        url:'https://api.github.com/repos/' + repo + '/commits?per_page=2', 
         headers: {
           'User-Agent': self.userAgent,
           'Authorization': 'token ' + self.token
@@ -39,40 +45,12 @@ function Watchify(options) {
           reject(err);
         }
         let data = JSON.parse(body);
+        let changedFiles;
+
         console.log(data[0].sha);
         resolve(data[0].sha);
       });
     })
-  }
-
-  function _pollRepo(repo, currentCommit, onCommit) {
-    console.log('polling');
-
-    request.get({
-        url:'https://api.github.com/repos/' + repo + '/commits?per_page=1', 
-        headers: {
-          'User-Agent': self.userAgent,
-          'Authorization': 'token ' + self.token
-        }
-      }, function(err, response, body) {
-        if(err) {
-          console.log(err);
-          return;
-        }
-        let data = JSON.parse(body);
-        let changedFiles;
-        // onCommit('foo', 'bar', 'baz');
-        if (data[0].sha === currentCommit) {
-          //nothing has changed
-          console.log('nothing changed');
-          return;
-        } else {
-          //there's a new commit!  Do something!
-          //https://api.github.com/repos/Fyrd/caniuse/compare/734fe7198f6e294e293c27669eaf8cdec835b219...be9c49dc039c8db44efff3f12a6bf724540f20b1
-          //https://api.github.com/repos/Fyrd/caniuse/compare/currentCommit...data[0].sha
-          _compareCommits(repo, currentCommit, data[0].sha, onCommit);
-        }
-      });
   }
 
   function _compareCommits(repo, base, head, onCommit) {
@@ -90,7 +68,6 @@ function Watchify(options) {
       }
       let data = JSON.parse(body);
       let listOfChangedFiles = data.files;
-      self.currentCommit = head;
 
       onCommit(listOfChangedFiles);
     })
