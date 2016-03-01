@@ -22,5 +22,8 @@ watcher.watch({
   interval: 10000,
   onCommit: function(listOfChangedFiles) {
     console.log(listOfChangedFiles);
+  },
+  onPing: function(commitSha) {
+    console.log(commitSha);
   }
 });

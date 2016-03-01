@@ -15,14 +15,15 @@ function Watchify(options) {
     let currentCommit = '';
     const repo = params.targetUser + '/' + params.targetRepo;
     const interval = params.interval;
+    const onPing = params.onPing;
     const onCommit = params.onCommit;
     
     //ping first, then set the interval
-    _pingRepo(repo, currentCommit, onCommit).then(function(mostRecentCommit) {
+    _pingRepo(repo, currentCommit, onPing).then(function(mostRecentCommit) {
       currentCommit = mostRecentCommit;
     });
     setInterval(function() {
-      _pingRepo(repo, currentCommit, onCommit).then(function(mostRecentCommit) {
+      _pingRepo(repo, currentCommit, onPing).then(function(mostRecentCommit) {
         if(currentCommit !== mostRecentCommit) {
           _compareCommits(repo, currentCommit, mostRecentCommit, onCommit);
           currentCommit = mostRecentCommit;
@@ -31,7 +32,7 @@ function Watchify(options) {
     }, interval);
   }
 
-  function _pingRepo(repo, currentCommit, onCommit) {
+  function _pingRepo(repo, currentCommit, onPing) {
     return new Promise(function(resolve, reject) {
       request.get({
         url:'https://api.github.com/repos/' + repo + '/commits?per_page=2', 
@@ -47,7 +48,9 @@ function Watchify(options) {
         let data = JSON.parse(body);
         let changedFiles;
 
-        console.log(data[0].sha);
+        if(onPing && onPing instanceof Function) {
+          onPing(data[0].sha);
+        }
         resolve(data[0].sha);
       });
     })
@@ -68,8 +71,9 @@ function Watchify(options) {
       }
       let data = JSON.parse(body);
       let listOfChangedFiles = data.files;
-
-      onCommit(listOfChangedFiles);
+      if(onCommit && onCommit instanceof Function) {
+        onCommit(listOfChangedFiles);
+      }
     })
   }
 
