@@ -15,7 +15,7 @@ const Watchify = require('./github-watchify');
 
 const watcher = new Watchify({
     userAgent: 'github-watchify', //unique user agent string required by github
-    token: process.env.GITHUB_TOKEN
+    token: 'A_KEWL_GITHUB_TOKEN'
 });
 ```
 
