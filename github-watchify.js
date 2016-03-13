@@ -72,7 +72,7 @@ function Watchify(options) {
       let data = JSON.parse(body);
       let listOfChangedFiles = data.files;
       if(onCommit && onCommit instanceof Function) {
-        onCommit(listOfChangedFiles);
+        onCommit(data, listOfChangedFiles);
       }
     })
   }
