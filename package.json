@@ -1,7 +1,7 @@
 {
   "name": "github-watchify",
-  "version": "0.0.1",
-  "description": "Polls a github repo and returns a list of any changed files. Think of it as a shitty webhook for repos you don't own.",
+  "version": "0.0.2",
+  "description": "Polls a github repo and returns a list of any changed files. Think of it as a post-commit webhook for repos you don't own.",
   "main": "github-watchify.js",
   "scripts": {
     "test": "test"
